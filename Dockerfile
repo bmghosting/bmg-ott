@@ -34,10 +34,10 @@ RUN             mkdir -pm755 /etc/apt/keyrings
 RUN             wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 RUN             wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources
 RUN             apt update
-RUN             apt install --install-recommends wine-stable-i386=9.0.0.0~bookworm-1 -y && \
-                apt install --install-recommends wine-stable-amd64=9.0.0.0~bookworm-1 -y && \
-                apt install --install-recommends wine-stable=9.0.0.0~bookworm-1 -y && \
-                apt install --install-recommends winehq-stable=9.0.0.0~bookworm-1 -y && \
+RUN             apt install --install-recommends wine-stable-i386=10.0.0.0~bookworm-1 -y && \
+                apt install --install-recommends wine-stable-amd64=10.0.0.0~bookworm-1 -y && \
+                apt install --install-recommends wine-stable=10.0.0.0~bookworm-1 -y && \
+                apt install --install-recommends winehq-stable=10.0.0.0~bookworm-1 -y && \
                 apt install --install-recommends cabextract wine-binfmt -y
 
 # Set up Winetricks
@@ -55,5 +55,5 @@ ENV             DISPLAY_DEPTH=16
 ENV             AUTO_UPDATE=1
 ENV             XVFB=1
 
-COPY            ../entrypoint.sh /entrypoint.sh
+COPY            ./../entrypoint.sh /entrypoint.sh
 CMD             [ "/bin/bash", "/entrypoint.sh" ]
