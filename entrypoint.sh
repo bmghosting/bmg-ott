@@ -7,7 +7,8 @@ echo "Current timezone: $(cat /etc/timezone)"
 wine --version
 
 # Make internal Docker IP address available to processes.
-export INTERNAL_IP=`ip route get 1 | awk '{print $NF;exit}'`
+INTERNAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}')
+export INTERNAL_IP
 
 ## just in case someone removed the defaults.
 if [ "${STEAM_USER}" == "" ]; then
@@ -21,20 +22,21 @@ else
 fi
 
 ## if auto_update is not set or to 1 update
-if [ -z ${AUTO_UPDATE} ] || [ "${AUTO_UPDATE}" == "1" ]; then
+if [ -z ${AUTO_UPDATE} ] || [ "${AUTO_UPDATE}" == "1" ]; then 
     # Update Source Server
     if [ ! -z ${SRCDS_APPID} ]; then
-        ./steamcmd/steamcmd.sh +force_install_dir /home/container +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} $( [[ "${WINDOWS_INSTALL}" == "1" ]] && printf %s '+@sSteamCmdForcePlatformType windows' ) +app_update ${SRCDS_APPID} $( [[ ! -z ${SRCDS_BETAID} ]] && printf %s "-beta ${SRCDS_BETAID}" ) $( [[ ! -z ${SRCDS_BETAPASS} ]] && printf %s "-betapassword ${SRCDS_BETAPASS}" ) $( [[ ! -z ${HLDS_GAME} ]] && printf %s "+app_set_config 90 mod ${HLDS_GAME}" ) $( [[ ! -z ${VALIDATE} ]] && printf %s "validate" ) +quit
+	./steamcmd/steamcmd.sh +force_install_dir /home/container +login ${STEAM_USER} ${STEAM_PASS} ${STEAM_AUTH} $( [[ "${WINDOWS_INSTALL}" == "1" ]] && printf %s '+@sSteamCmdForcePlatformType windows' ) +app_update 1007 +app_update ${SRCDS_APPID} $( [[ -z ${SRCDS_BETAID} ]] || printf %s "-beta ${SRCDS_BETAID}" ) $( [[ -z ${SRCDS_BETAPASS} ]] || printf %s "-betapassword ${SRCDS_BETAPASS}" ) $( [[ -z ${HLDS_GAME} ]] || printf %s "+app_set_config 90 mod ${HLDS_GAME}" ) $( [[ -z ${VALIDATE} ]] || printf %s "validate" ) +quit
     else
         echo -e "No appid set. Starting Server"
     fi
+
 else
     echo -e "Not updating game server as auto update was set to 0. Starting Server"
 fi
 
-# Spawn a virtual frame buffer - Replace with xvfb-run
-Xvfb :0 -screen 0 1024x768x16 -ac &
-DISPLAY=:0
+if [[ $XVFB == 1 ]]; then
+        Xvfb :0 -screen 0 ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT}x${DISPLAY_DEPTH} &
+fi
 
 # Install necessary to run packages
 echo "First launch will throw some errors. Ignore them"
@@ -47,11 +49,11 @@ if [[ $WINETRICKS_RUN =~ gecko ]]; then
         WINETRICKS_RUN=${WINETRICKS_RUN/gecko}
 
         if [ ! -f "$WINEPREFIX/gecko_x86.msi" ]; then
-                wget -q -O $WINEPREFIX/gecko_x86.msi http://dl.winehq.org/wine/wine-gecko/2.47.2/wine_gecko-2.47.2-x86.msi
+                wget -q -O $WINEPREFIX/gecko_x86.msi http://dl.winehq.org/wine/wine-gecko/2.47.4/wine_gecko-2.47.4-x86.msi
         fi
 
         if [ ! -f "$WINEPREFIX/gecko_x86_64.msi" ]; then
-                wget -q -O $WINEPREFIX/gecko_x86_64.msi http://dl.winehq.org/wine/wine-gecko/2.47.2/wine_gecko-2.47.2-x86_64.msi
+                wget -q -O $WINEPREFIX/gecko_x86_64.msi http://dl.winehq.org/wine/wine-gecko/2.47.4/wine_gecko-2.47.4-x86_64.msi
         fi
 
         wine msiexec /i $WINEPREFIX/gecko_x86.msi /qn /quiet /norestart /log $WINEPREFIX/gecko_x86_install.log
@@ -64,7 +66,7 @@ if [[ $WINETRICKS_RUN =~ mono ]]; then
         WINETRICKS_RUN=${WINETRICKS_RUN/mono}
 
         if [ ! -f "$WINEPREFIX/mono.msi" ]; then
-                wget -q -O $WINEPREFIX/mono.msi http://dl.winehq.org/wine/wine-mono/6.4.0/wine-mono-6.4.0-x86.msi
+                wget -q -O $WINEPREFIX/mono.msi https://dl.winehq.org/wine/wine-mono/9.1.0/wine-mono-9.1.0-x86.msi
         fi
 
         wine msiexec /i $WINEPREFIX/mono.msi /qn /quiet /norestart /log $WINEPREFIX/mono_install.log
@@ -88,9 +90,7 @@ if [ -f "$SERVER_CONFIG_PATH" ]; then
   	sed -i "s/^WhiteListIsEnabled\s*=.*/WhiteListIsEnabled $(printf '%s\n' "=$WHITELIST" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
 	sed -i "s/^#\{0,1\}ServerPassword\s*=.*/ServerPassword $(printf '%s\n' "=$SERVER_PASS" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
 	sed -i "s/^PortID\s*=.*/PortID $(printf '%s\n' "=$SERVER_PORT" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-  	sed -i "s/^SteamGamePortID\s*=.*/SteamGamePortID $(printf '%s\n' "=$STEAM_GAME_PORT" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
 	sed -i "s/^SteamQueryPortID\s*=.*/SteamQueryPortID $(printf '%s\n' "=$STEAM_QUERY_PORT" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-  	sed -i "s/^SteamPortID\s*=.*/SteamPortID $(printf '%s\n' "=$STEAM_PORT" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
 else
 	echo "Configuration file not found: $SERVER_CONFIG_PATH"
 fi
