@@ -80,19 +80,24 @@ done
 
 # Modify the configuration variables using sed
 if [ -f "$SERVER_CONFIG_PATH" ]; then
-	echo "Found configuration file - replacing variables"
-	sed -i "s/^ServerName\s*=.*/ServerName $(printf '%s\n' "=$SERVER_NAME" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^MaxPlayerCount\s*=.*/MaxPlayerCount $(printf '%s\n' "=$PLAYERS" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^WelcomeMessage\s*=.*/WelcomeMessage $(printf '%s\n' "=$MOTD" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^ProbyAdminPassword\s*=.*/ProbyAdminPassword $(printf '%s\n' "=$PROBY_PASS" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-  	sed -i "s/^SeniorAdminPassword\s*=.*/SeniorAdminPassword $(printf '%s\n' "=$SENIOR_PASS" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^AdminPassword\s*=.*/AdminPassword $(printf '%s\n' "=$ADMIN_PASS" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-  	sed -i "s/^WhiteListIsEnabled\s*=.*/WhiteListIsEnabled $(printf '%s\n' "=$WHITELIST" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^#\{0,1\}ServerPassword\s*=.*/ServerPassword $(printf '%s\n' "=$SERVER_PASS" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^PortID\s*=.*/PortID $(printf '%s\n' "=$SERVER_PORT" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
-	sed -i "s/^SteamQueryPortID\s*=.*/SteamQueryPortID $(printf '%s\n' "=$STEAM_QUERY_PORT" | sed -e 's/[\/&]/\\&/g')/g" "$SERVER_CONFIG_PATH"
+    echo "Found configuration file - replacing variables"
+
+    escape_for_sed() {
+        printf '%s\n' "$1" | sed -e 's/\\/\\\\/g' -e 's/[\/&]/\\&/g'
+    }
+
+    [ -n "$SERVER_NAME" ]      && sed -i "s/^ServerName\s*=.*/ServerName = $(escape_for_sed "$SERVER_NAME")/" "$SERVER_CONFIG_PATH"
+    [ -n "$PLAYERS" ]          && sed -i "s/^MaxPlayerCount\s*=.*/MaxPlayerCount = $(escape_for_sed "$PLAYERS")/" "$SERVER_CONFIG_PATH"
+    [ -n "$MOTD" ]             && sed -i "s/^WelcomeMessage\s*=.*/WelcomeMessage = $(escape_for_sed "$MOTD")/" "$SERVER_CONFIG_PATH"
+    [ -n "$PROBY_PASS" ]       && sed -i "s/^ProbyAdminPassword\s*=.*/ProbyAdminPassword = $(escape_for_sed "$PROBY_PASS")/" "$SERVER_CONFIG_PATH"
+    [ -n "$SENIOR_PASS" ]      && sed -i "s/^SeniorAdminPassword\s*=.*/SeniorAdminPassword = $(escape_for_sed "$SENIOR_PASS")/" "$SERVER_CONFIG_PATH"
+    [ -n "$ADMIN_PASS" ]       && sed -i "s/^AdminPassword\s*=.*/AdminPassword = $(escape_for_sed "$ADMIN_PASS")/" "$SERVER_CONFIG_PATH"
+    [ -n "$WHITELIST" ]        && sed -i "s/^WhiteListIsEnabled\s*=.*/WhiteListIsEnabled = $(escape_for_sed "$WHITELIST")/" "$SERVER_CONFIG_PATH"
+    [ -n "$SERVER_PASS" ]      && sed -i "s/^#\{0,1\}ServerPassword\s*=.*/ServerPassword = $(escape_for_sed "$SERVER_PASS")/" "$SERVER_CONFIG_PATH"
+    [ -n "$SERVER_PORT" ]      && sed -i "s/^PortID\s*=.*/PortID = $(escape_for_sed "$SERVER_PORT")/" "$SERVER_CONFIG_PATH"
+    [ -n "$STEAM_QUERY_PORT" ] && sed -i "s/^SteamQueryPortID\s*=.*/SteamQueryPortID = $(escape_for_sed "$STEAM_QUERY_PORT")/" "$SERVER_CONFIG_PATH"
 else
-	echo "Configuration file not found: $SERVER_CONFIG_PATH"
+    echo "Configuration file not found: $SERVER_CONFIG_PATH"
 fi
 
 # Replace Startup Variables
